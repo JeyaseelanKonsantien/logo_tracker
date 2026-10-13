@@ -178,6 +178,3 @@ HTTPServer(('',8080),H).serve_forever()"
 - Accuracy and timing depend on the phone's camera frame rate and processing speed.
 - The tracking screen is locked to landscape so image and overlay coordinates line up.
 
-## License
-
-Add your license here (for example MIT).# logo_tracker
