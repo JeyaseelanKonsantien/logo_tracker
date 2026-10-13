@@ -23,7 +23,10 @@ class _TrackingScreenState extends State<TrackingScreen> {
   @override
   void dispose() {
     t.dispose();
-    SystemChrome.setPreferredOrientations(DeviceOrientation.values);
+    SystemChrome.setPreferredOrientations([
+      DeviceOrientation.portraitUp,
+      DeviceOrientation.portraitDown,
+    ]);
     super.dispose();
   }
 
@@ -99,7 +102,7 @@ class _TrackingScreenState extends State<TrackingScreen> {
           ),
           const SizedBox(height: 8),
           Text(t.center == null
-              ? 'No logo'
+              ? 'No logo  (score ${t.score.toStringAsFixed(2)})'
               : 'x ${t.center!.dx.toStringAsFixed(3)}  y ${t.center!.dy.toStringAsFixed(3)}\nscore ${t.score.toStringAsFixed(2)}'),
           const SizedBox(height: 8),
           FilledButton(
@@ -110,6 +113,16 @@ class _TrackingScreenState extends State<TrackingScreen> {
           Slider(value: t.gateCenter, min: 0.05, max: 0.95, onChanged: (v) => t.setGate(c: v)),
           const Text('Gate width (= 0.5 mm)'),
           Slider(value: t.gateWidth, min: 0.005, max: 0.2, onChanged: (v) => t.setGate(w: v)),
+
+          // ---- NEW: match score slider ----
+          Text('Match score: ${t.threshold.toStringAsFixed(2)}'),
+          Slider(
+              value: t.threshold,
+              min: 0.30,
+              max: 0.95,
+              onChanged: t.setThreshold),
+          // ---------------------------------
+
           const Text('Drag box to move;\ndrag corner dot to resize.',
               style: TextStyle(fontSize: 11, color: Colors.white70)),
         ]),

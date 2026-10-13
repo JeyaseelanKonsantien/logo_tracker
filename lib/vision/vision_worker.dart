@@ -2,9 +2,11 @@ import 'dart:isolate';
 import 'dart:typed_data';
 import 'package:opencv_dart/opencv_dart.dart' as cv;
 
-
+/// Main -> worker: ['frame', TransferableTypedData, w, h, rowStride, bytesPerPixel, learnRect?]
+///   learnRect = [l, t, r, b] normalised 0..1, applied to that frame.
+/// Worker -> main: ['ready', SendPort] | ['learned', true] | ['result', true, cx, cy, score]
+/// The worker always reports the best match; the app applies the score threshold.
 const _procWidth = 320; // frames are downscaled to this width for speed
-const matchThreshold = 0.55;
 
 void visionEntry(SendPort main) {
   final port = ReceivePort();
@@ -55,6 +57,6 @@ void visionEntry(SendPort main) {
     final cy = (maxLoc.y + t.rows / 2) / img.rows;
     res.dispose();
     img.dispose();
-    main.send(['result', maxVal >= matchThreshold, cx, cy, maxVal]);
+    main.send(['result', true, cx, cy, maxVal]); // ONE result per frame
   });
 }

@@ -23,10 +23,11 @@ class TrackerController extends ChangeNotifier {
   Rect roi = const Rect.fromLTWH(0.40, 0.35, 0.20, 0.30);
   double gateCenter = 0.5;
   double gateWidth = 0.04; // calibrate so this span == 0.5 mm on the belt
+  double threshold = 0.55; // minimum match score to count as "logo found"
   Offset? center;
   double score = 0;
   bool learned = false;
-  bool editing = true; // true = selection box visible   <-- ADDED
+  bool editing = true; // true = selection box visible
   int signal = 0;
   String? error;
 
@@ -47,11 +48,14 @@ class TrackerController extends ChangeNotifier {
       await cam!.initialize();
       await cam!.lockCaptureOrientation(DeviceOrientation.landscapeLeft);
 
+      // Let the camera focus once, then lock it.
       await Future.delayed(const Duration(milliseconds: 1000));
       try {
         await cam!.setFocusMode(FocusMode.locked);
       } catch (_) {
+        // Some devices don't support locked focus; ignore.
       }
+
       await cam!.startImageStream(_onFrame);
       // Re-assert current state so the endpoint always sees a fresh value.
       _heartbeat = Timer.periodic(
@@ -86,9 +90,9 @@ class TrackerController extends ChangeNotifier {
         notifyListeners();
       case 'result':
         _busy = false;
-        final found = m[1] as bool;
-        center = found ? Offset(m[2], m[3]) : null;
         score = m[4];
+        final found = (m[1] as bool) && score >= threshold;
+        center = found ? Offset(m[2], m[3]) : null;
         final inGate = found && center!.dx >= gateL && center!.dx <= gateR;
         final next = inGate ? 1 : 0;
         if (next != signal) {
@@ -102,7 +106,7 @@ class TrackerController extends ChangeNotifier {
   void learnTemplate() =>
       _learnRequest = [roi.left, roi.top, roi.right, roi.bottom];
 
-
+  /// "Re-learn logo": bring the box back so the user can select again.
   void startRelearn() {
     editing = true;
     notifyListeners();
@@ -117,6 +121,11 @@ class TrackerController extends ChangeNotifier {
   void setGate({double? c, double? w}) {
     gateCenter = c ?? gateCenter;
     gateWidth = w ?? gateWidth;
+    notifyListeners();
+  }
+
+  void setThreshold(double v) {
+    threshold = v;
     notifyListeners();
   }
 
